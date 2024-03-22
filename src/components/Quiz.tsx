@@ -4,6 +4,7 @@ import QuizCore from '../core/QuizCore';
 import QuizQuestion from '../core/QuizQuestion';
 
 interface QuizState {
+  quizCore: QuizCore;
   currentQuestion: QuizQuestion | null;
   selectedAnswer: string | null;
   score: number;
@@ -11,11 +12,12 @@ interface QuizState {
 
 const Quiz: React.FC = () => {
   const quizCore = new QuizCore();
-
   const [state, setState] = useState<QuizState>({
+    quizCore: quizCore,
     currentQuestion: quizCore.getCurrentQuestion(),  // Initialize the current question.
     selectedAnswer: null,  // Initialize the selected answer.
     score: 0,  // Initialize the score.
+
   });
 
   const handleOptionSelect = (option: string): void => {
@@ -23,35 +25,39 @@ const Quiz: React.FC = () => {
   }
 
   const handleButtonClick = (): void => {
-    const { selectedAnswer, currentQuestion } = state;
-    if (selectedAnswer && currentQuestion) {
-      quizCore.answerQuestion(selectedAnswer);
-      if (quizCore.hasNextQuestion()) {
-        quizCore.nextQuestion();
+    if (!state.currentQuestion) {
+      setState((prevState) => ({ ...prevState, currentQuestion: state.quizCore.getCurrentQuestion() }));
+    }
+    if (state.selectedAnswer && state.currentQuestion) {
+      console.log('currentQuestion', state.currentQuestion.question);
+      state.quizCore.answerQuestion(state.selectedAnswer);
+      if (state.quizCore.hasNextQuestion()) {
+        state.quizCore.nextQuestion();
         setState((prevState) => ({
           ...prevState,
-          currentQuestion: quizCore.getCurrentQuestion(),
+          currentQuestion: state.quizCore.getCurrentQuestion(),
           selectedAnswer: null,
         }));
+        console.log('next_currentQuestion', state.currentQuestion.question);
       } else {
         setState((prevState) => ({
           ...prevState,
           currentQuestion: null,
           selectedAnswer: null,
-          score: quizCore.getScore(),
+          score: state.quizCore.getScore(),
         }));
       }
     }
   };
 
   const { currentQuestion, selectedAnswer } = state;
-  const buttonText =quizCore.hasNextQuestion() ?'Next Question':'Submit';
+  const buttonText =state.quizCore.hasNextQuestion() ?'Next Question':'Submit';
 
   if (!currentQuestion) {
     return (
       <div>
         <h2>Quiz Completed</h2>
-        <p>Final Score: {quizCore.getScore()} out of {quizCore.getTotalQuestions()}</p>
+        <p>Final Score: {state.quizCore.getScore()} out of {state.quizCore.getTotalQuestions()}</p>
       </div>
     );
   }
